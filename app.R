@@ -1,5 +1,17 @@
 library(shiny)
 library(deSolve)
+library(shinymanager)
+
+#cred <- data.frame(
+#  user     = c("lcb",  "user"),
+#  password = c("Lcb3621!",  "Lcb3621!"),
+#  admin    = c(TRUE,     FALSE)
+#)
+#create_db(
+#  credentials = cred,
+#  sqlite_path = "auth.sqlite",           # ← 앱 폴더에 생김
+#  passphrase  = Sys.getenv("SM_KEY")     # 환경변수로 암호화 키 보관
+#)
 
 # ODE 정의
 tgi_model <- function(time, state, parameters, dosing_times, dose_amt) {
@@ -52,7 +64,7 @@ tgi_model <- function(time, state, parameters, dosing_times, dose_amt) {
 }
 
 # UI
-ui <- fluidPage(
+ui <- secure_app(fluidPage(
   titlePanel("ADC TGI PK/PD Model"),
   div(
     style = "margin-bottom: 20px; color: #555; font-size: 14px;",
@@ -148,9 +160,13 @@ ui <- fluidPage(
     )
   )
 )
+)
+
 
 # Server
-server <- function(input, output) {
+server <- function(input, output,session) {
+  res = secure_server(check_credentials= check_credentials("auth.sqlite",
+                                                           passphrase = Sys.getenv("SM_KEY")))
   observeEvent(input$simulate, {
     parameters <- reactiveValuesToList(input)
     times <- seq(0, 50, by = 0.5)
